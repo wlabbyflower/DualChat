@@ -2,6 +2,8 @@ name: Build and publish LPK
 
 on:
   push:
+    branches: [main]
+    paths: ['.github/workflows/release.yml']
     tags:
       - 'v*'
   workflow_dispatch:
@@ -38,7 +40,12 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          lzc-cli project release -o "DualChat-$VERSION.lpk"
+          if ! lzc-cli project release -o "DualChat-$VERSION.lpk" > /tmp/lpk-build.log 2>&1; then
+            cat /tmp/lpk-build.log
+            echo "::error::$(tail -20 /tmp/lpk-build.log | tr '\n' ' ')"
+            exit 1
+          fi
+          cat /tmp/lpk-build.log
           lzc-cli lpk info "DualChat-$VERSION.lpk"
           sha256sum "DualChat-$VERSION.lpk" > SHA256SUMS
       - name: Publish release
