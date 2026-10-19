@@ -1,5 +1,5 @@
 usage: |
-  Telegram 与 WhatsApp 共用远程桌面。WhatsApp 可从应用菜单或终端运行 whatsapp 打开，并使用手机扫码关联。
+  Telegram、WhatsApp 与 Discord 共用远程桌面。底部任务栏可启动应用、切换窗口、恢复最小化窗口。WhatsApp 使用手机扫码关联，Discord 使用官方网页版登录。
   应用不再内置代理；请先在微服系统配置覆盖应用容器流量的 TUN。
   升级后请将 Telegram 内的旧手动代理设置关闭。
 application:

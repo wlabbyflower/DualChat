@@ -1,0 +1,7 @@
+#!/bin/sh
+# 在桌面会话中启动，独立于旧版可能阻塞的 Openbox autostart。
+# tint2 自身等待窗口管理器就绪，退出后重启以恢复任务栏。
+while :; do
+    tint2 -c /etc/dualchat/tint2rc
+    sleep 2
+done

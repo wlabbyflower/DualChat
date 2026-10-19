@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Discord
+Comment=Discord Web
+Exec=/usr/local/bin/discord
+Icon=applications-internet
+Terminal=false
+Categories=Network;InstantMessaging;

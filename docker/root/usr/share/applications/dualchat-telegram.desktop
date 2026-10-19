@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Telegram
+Exec=/opt/Telegram/Telegram
+Icon=/config/.local/share/icons/hicolor/256x256/apps/org.telegram.desktop.png
+Terminal=false
+Categories=Network;InstantMessaging;

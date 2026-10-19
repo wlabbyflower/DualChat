@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+mkdir -p /config/discord
+# 与 WhatsApp 隔离浏览器资料，保持各自的登录状态。
+exec chromium --no-sandbox --user-data-dir=/config/discord --app=https://discord.com/app "$@"

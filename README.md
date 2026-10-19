@@ -2,20 +2,20 @@
 
 [下载安装包（LPK）](https://github.com/wlabbyflower/DualChat/releases/latest)
 
-在同一个远程桌面中使用 Telegram 桌面客户端和官方 [WhatsApp Web](https://web.whatsapp.com/)。WhatsApp 使用 Chromium 打开独立窗口，不包含消息机器人或 API 转发功能。
+在同一个远程桌面中使用 Telegram 桌面客户端、官方 [WhatsApp Web](https://web.whatsapp.com/) 和 [Discord Web](https://discord.com/app)。WhatsApp 与 Discord 使用 Chromium 打开独立窗口，不包含消息机器人或 API 转发功能。
 
 ## 使用
 
 1. 在懒猫微服系统启用 TUN，并确认规则覆盖应用容器的出站流量及 DNS。仅在电脑或手机上开启代理不会让微服容器自动使用代理。
 2. 安装 LPK，打开应用即可使用 Telegram。
-3. 将 Telegram 窗口取消最大化，右击桌面，选择 **WhatsApp**；也可以打开 xterm 输入 `whatsapp`。
-4. 使用手机 WhatsApp 的“关联设备”扫描二维码登录。
+3. 点击底部任务栏的 **WhatsApp** 或 **Discord** 图标启动；点击任务栏中的窗口按钮可在三个应用之间切换，也可恢复已最小化的窗口。右击桌面的应用菜单仍可使用。
+4. 使用手机 WhatsApp 的“关联设备”扫描二维码登录；Discord 在官方登录页登录。
 
 应用不再内置 v2rayA，也不再开放 2017、20170、20171、20172 端口。不需要配置 HTTP_PROXY 或 SOCKS 端口。系统 TUN 必须允许懒猫应用域名和内部网络正常直连，以免影响远程桌面连接。
 
 ## 升级与数据
 
-- 包 ID、服务名和 `/config` 的旧绑定路径保持不变：用户文稿的 `telegram` 目录保存 Telegram 会话；其中的 `whatsapp` 子目录保存 Chromium 登录资料。升级前请备份整个目录。
+- 包 ID、服务名和 `/config` 的旧绑定路径保持不变：用户文稿的 `telegram` 目录保存 Telegram 会话；其中的 `whatsapp`、`discord` 子目录分别保存两个网页客户端的 Chromium 登录资料。升级前请备份整个目录。
 - 如果 Telegram 中配置过手动 SOCKS/HTTP 代理，请在 Telegram 设置中关闭，改为使用系统网络。
 - 旧 `/lzcapp/var/v2raya` 数据不会主动删除，但不再使用。
 - 当前仍沿用旧文稿目录绑定；lzcos 1.7.0 起需要管理员授权。未来若迁移至应用私有存储，应显式迁移数据，避免让用户重新登录。
@@ -26,15 +26,15 @@
 需要 lzc-cli 2.0.9+、lzcos 1.5.0+ 和本机 Docker/buildx。默认使用本机构建器，目标架构为 linux/amd64；其他架构需另行确认基础镜像支持。基础镜像沿用原项目固定的懒猫仓库版本，通过 `images` 构建并内嵌 Chromium 扩展层。
 
 ```bash
-lzc-cli project build -o telegram-whatsapp.lpk
+lzc-cli project build -o dualchat-1.3.0.lpk
 ```
 
-本地容器已验证远程桌面 HTTP 返回 200、Telegram 与 WhatsApp 浏览器进程启动，以及菜单重复初始化不产生重复入口。构建结果不等于微服上的运行验证。安装后需检查：Telegram 收发消息、WhatsApp 扫码及收发消息、重启后两者仍保持登录、多用户会话隔离，以及开启系统 TUN 后远程桌面仍可访问。音视频通话、摄像头及麦克风转发尚未验证。
+本地容器已验证远程桌面 HTTP 返回 200、Telegram 与 WhatsApp 浏览器进程启动，以及菜单重复初始化不产生重复入口。1.2.1 增加底部 48 像素任务栏，已通过模拟点击验证两个应用窗口交替获得焦点，并确认桌面工作区为任务栏留出空间。任务栏随桌面会话启动，兼容已有 Openbox 自启动配置。1.3.0 加入 Discord 独立浏览器资料、任务栏启动器和右键菜单，已在本地验证点击启动、与 Telegram 切换窗口，以及菜单重复初始化不产生重复入口。构建结果不等于微服上的运行验证。安装后需检查：Telegram 收发消息、WhatsApp 扫码及收发消息、Discord 登录及收发消息、重启后三者仍保持登录、多用户会话隔离，以及开启系统 TUN 后远程桌面仍可访问。音视频通话、摄像头及麦克风转发尚未验证。
 
 ## 常见问题
 
-- Telegram 或 WhatsApp 无法连接：先确认系统 TUN 接管容器流量及 DNS，再检查 Telegram 是否残留手动代理。只有设置系统 HTTP 代理环境变量不等于开启 TUN。
-- 没有 WhatsApp 菜单：在 xterm 执行 `whatsapp`；检查日志中自定义初始化脚本是否执行。
+- Telegram、WhatsApp 或 Discord 无法连接：先确认系统 TUN 接管容器流量及 DNS，再检查 Telegram 是否残留手动代理。只有设置系统 HTTP 代理环境变量不等于开启 TUN。
+- 没有 WhatsApp 或 Discord 菜单：在 xterm 执行 `whatsapp` 或 `discord`；检查日志中自定义初始化脚本是否执行。
 - 启用中文输入：在左侧 KasmVNC 设置中启用“本地输入法”。
 - 手机上滚动：双指滚动。
 - 查看服务日志：`lzc-cli project log -s telegramv -f`。
@@ -47,4 +47,4 @@ Chromium 在当前容器环境中无法启用内置沙箱，因此启动器使�
 
 ## 项目来源
 
-基于 [anpho/lzc-telegram-v](https://github.com/anpho/lzc-telegram-v) 改造，加入 WhatsApp Web，并改为使用系统网络。
+基于 [anpho/lzc-telegram-v](https://github.com/anpho/lzc-telegram-v) 改造，加入 WhatsApp Web、Discord Web 和底部任务栏，并改为使用系统网络。

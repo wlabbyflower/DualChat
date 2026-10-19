@@ -6,4 +6,7 @@ for menu in /defaults/menu.xml /config/.config/openbox/menu.xml; do
     if ! grep -q '/usr/local/bin/whatsapp' "$menu"; then
         sed -i '\|</menu>|i\<item label="WhatsApp"><action name="Execute"><command>/usr/local/bin/whatsapp</command></action></item>' "$menu"
     fi
+    if ! grep -q '/usr/local/bin/discord' "$menu"; then
+        sed -i '\|</menu>|i\<item label="Discord"><action name="Execute"><command>/usr/local/bin/discord</command></action></item>' "$menu"
+    fi
 done
