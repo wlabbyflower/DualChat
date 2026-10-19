@@ -1,4 +1,10 @@
 #!/bin/sh
+# tint2 的启动子进程逐个关闭文件描述符。微服的十亿级默认上限会让
+# 点击启动卡在清理循环中；只限制任务栏及其启动的子进程，不影响桌面服务。
+limit=$(ulimit -n)
+if [ "$limit" = unlimited ] || [ "$limit" -gt 4096 ]; then
+    ulimit -S -n 4096
+fi
 # 在桌面会话中启动，独立于旧版可能阻塞的 Openbox autostart。
 # tint2 自身等待窗口管理器就绪，退出后重启以恢复任务栏。
 while :; do
