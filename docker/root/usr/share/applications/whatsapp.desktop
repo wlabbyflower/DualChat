@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=WhatsApp
+Comment=WhatsApp Web
+Exec=/usr/local/bin/whatsapp
+Icon=web-browser
+Terminal=false
+Categories=Network;InstantMessaging;

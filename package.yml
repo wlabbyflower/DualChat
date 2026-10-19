@@ -1,0 +1,8 @@
+package: anpho.lzcapp.telegramv
+version: 1.2.0
+name: Telegram + WhatsApp
+description: 支持 WhatsApp 和 Telegram，在懒猫微服上集中使用两种即时通讯服务。
+license: https://choosealicense.com/licenses/mit/
+homepage: https://github.com/wlabbyflower/DualChat
+author: anpho
+min_os_version: 1.5.0

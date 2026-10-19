@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+mkdir -p /config/whatsapp
+# 受容器命名空间限制，Chromium 的内置沙箱不可用。
+exec chromium --no-sandbox --user-data-dir=/config/whatsapp --app=https://web.whatsapp.com/ "$@"

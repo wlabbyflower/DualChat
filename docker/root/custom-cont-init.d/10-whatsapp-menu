@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+# 新安装修改默认菜单；升级时保留用户已有菜单，只补上入口。
+for menu in /defaults/menu.xml /config/.config/openbox/menu.xml; do
+    [ -f "$menu" ] || continue
+    if ! grep -q '/usr/local/bin/whatsapp' "$menu"; then
+        sed -i '\|</menu>|i\<item label="WhatsApp"><action name="Execute"><command>/usr/local/bin/whatsapp</command></action></item>' "$menu"
+    fi
+done
