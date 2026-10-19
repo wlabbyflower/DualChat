@@ -3,6 +3,6 @@ Type=Application
 Name=Discord
 Comment=Discord Web
 Exec=/usr/local/bin/discord
-Icon=applications-internet
+Icon=/usr/share/icons/dualchat/discord.svg
 Terminal=false
 Categories=Network;InstantMessaging;

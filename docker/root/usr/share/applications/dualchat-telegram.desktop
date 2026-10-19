@@ -2,6 +2,6 @@
 Type=Application
 Name=Telegram
 Exec=/opt/Telegram/Telegram
-Icon=/config/.local/share/icons/hicolor/256x256/apps/org.telegram.desktop.png
+Icon=/usr/share/icons/dualchat/telegram.svg
 Terminal=false
 Categories=Network;InstantMessaging;

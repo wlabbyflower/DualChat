@@ -2,8 +2,6 @@ name: Publish verified LPK
 
 on:
   push:
-    branches: [main]
-    paths: ['.github/workflows/release.yml']
     tags:
       - 'v*'
   workflow_dispatch:
@@ -50,18 +48,8 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           RELEASE_COMMIT: ${{ github.sha }}
         run: |
-          cat > /tmp/release-notes.md <<'EOF'
-          在同一远程桌面中使用 Telegram、WhatsApp Web 和 Discord Web。
-
-          - 新增 Discord，使用独立目录保存浏览器登录资料。
-          - 新增底部任务栏，支持启动应用、切换窗口、最小化及恢复。
-          - 保留原有 Telegram、WhatsApp 数据路径。
-
-          下载 LPK 后在懒猫微服中安装。请配置覆盖容器流量和 DNS 的系统 TUN。
-          本地已验证应用启动、窗口切换和远程桌面访问；真实账号收发消息及语音通话尚未验证。
-          EOF
           if ! gh release view "v$VERSION" >/dev/null 2>&1; then
-            gh release create "v$VERSION" --target "$RELEASE_COMMIT" --title "DualChat $VERSION" --notes-file /tmp/release-notes.md --draft
+            gh release create "v$VERSION" --target "$RELEASE_COMMIT" --title "DualChat $VERSION" --notes-file RELEASE_NOTES.md --draft
           fi
           gh release upload "v$VERSION" "DualChat-$VERSION.lpk" SHA256SUMS --clobber
           gh release edit "v$VERSION" --draft=false --latest
