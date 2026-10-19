@@ -1,5 +1,7 @@
 # DualChat
 
+[下载安装包（LPK）](https://github.com/wlabbyflower/DualChat/releases/latest)
+
 在同一个远程桌面中使用 Telegram 桌面客户端和官方 [WhatsApp Web](https://web.whatsapp.com/)。WhatsApp 使用 Chromium 打开独立窗口，不包含消息机器人或 API 转发功能。
 
 ## 使用
