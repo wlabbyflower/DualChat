@@ -52,8 +52,13 @@ case "$APP" in
         CMD=/usr/local/bin/discord
         WCLASS=discord.com__app.Chromium
         ;;
+    browser)
+        TITLE='Chromium'
+        CMD=/usr/local/bin/dualchat-browser
+        WCLASS=DualChatBrowser
+        ;;
     *)
-        echo "usage: dualchat-launch telegram|whatsapp|discord" >&2
+        echo "usage: dualchat-launch telegram|whatsapp|discord|browser" >&2
         exit 2
         ;;
 esac

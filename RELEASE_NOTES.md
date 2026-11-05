@@ -1,14 +1,12 @@
-1.4.0 修复任务栏图标点击无反应，Telegram 改为容器内自动更新。
+DualChat 1.5.0：四合一远程桌面环境。
 
-- 底部三个固定图标（Telegram / WhatsApp / Discord）改成统一走
-  `/usr/local/bin/dualchat-launch`：先压文件句柄软上限、用 setsid 脱离任务栏进程、
-  输出写日志，再启动；20 秒内没有新窗口就激活已有窗口，并在超时时弹提示，
-  不会再出现“点了什么都没有”。启动日志在 `文稿/telegram/dualchat/logs/launch.log`。
-- 任务栏改为 dock 窗口，Openbox 不再把它当普通窗口托管，避免被应用窗口盖住
-  或第一次点击被吃掉；补全了 tint2 的背景定义，图标悬停/按下有反馈。
-- Telegram 反复提示更新：镜像里的 Telegram 是固定旧版本，自带的更新器永远认为
-  有新版本。现在用官方 `externalupdater.d` 机制彻底关闭自带更新检查，
-  改由容器启动时后台检查 telegram.org 官方 Linux 包，下载到
-  `文稿/telegram/.dualchat/tdesktop/<版本>/`，下次启动生效；新版本启动失败会自动
-  回退到镜像内置版本。
-- 自动更新状态日志：`文稿/telegram/dualchat/logs/telegram-update.log`。
+- 同一桌面使用 Telegram 桌面客户端、WhatsApp Web、Discord Web 和 Chromium 浏览器。
+- 底部任务栏新增第四个 Chromium 固定图标，点击打开带地址栏的普通浏览器窗口；桌面右键菜单也提供入口。
+- 浏览器使用独立的持久化资料目录，保存书签、历史记录和登录状态，与 WhatsApp、Discord 隔离。
+- 沿用统一启动器的提示、日志及窗口检测机制。
+- 升级保留原包 ID 和数据绑定，无需重新创建聊天应用资料。
+
+浏览器为 Chromium（Chrome 的开源基础），不是 Google Chrome 官方发行版。
+需要微服系统 TUN 覆盖容器流量及 DNS。当前安装包面向 linux/amd64。
+
+验证：LPK 构建、Shell 语法及差异检查通过；本地容器实测 Chromium 在约 1 秒内创建窗口并生成独立资料目录。微服实际安装、聊天收发与音视频功能需在目标设备验证。

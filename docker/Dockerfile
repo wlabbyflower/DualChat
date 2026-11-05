@@ -12,7 +12,7 @@ COPY root/ /
 RUN mkdir -p /opt/Telegram/externalupdater.d \
     && printf '/opt/Telegram/Telegram\n' >/opt/Telegram/externalupdater.d/dualchat \
     && chmod 755 /usr/local/bin/whatsapp /usr/local/bin/discord \
-        /usr/local/bin/dualchat-panel /usr/local/bin/dualchat-launch \
+        /usr/local/bin/dualchat-browser /usr/local/bin/dualchat-panel /usr/local/bin/dualchat-launch \
         /usr/local/bin/dualchat-telegram /usr/local/bin/dualchat-telegram-update
 
 # 桌面会话入口：先起底部任务栏和后台更新检查，再进原来的 openbox 会话。

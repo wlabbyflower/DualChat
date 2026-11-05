@@ -22,6 +22,9 @@ for menu in /defaults/menu.xml /config/.config/openbox/menu.xml; do
     if ! grep -q '/usr/local/bin/discord\|dualchat-launch discord' "$menu"; then
         sed -i '\|</menu>|i\<item label="Discord"><action name="Execute"><command>/usr/local/bin/dualchat-launch discord</command></action></item>' "$menu"
     fi
+    if ! grep -q 'dualchat-launch browser' "$menu"; then
+        sed -i '\|</menu>|i\<item label="Chromium 浏览器"><action name="Execute"><command>/usr/local/bin/dualchat-launch browser</command></action></item>' "$menu"
+    fi
 done
 
 # 自启动：旧版写的是 wrapped-telegram（只有镜像内置二进制、不写更新标记），

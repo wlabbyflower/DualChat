@@ -91,7 +91,7 @@ mouse_middle = none
 mouse_right = none
 
 #-------------------------------------
-# Launchers：左侧三个固定入口
+# Launchers：左侧四个固定入口
 #-------------------------------------
 launcher_padding = 8 0 12
 launcher_background_id = 2
@@ -103,6 +103,7 @@ launcher_tooltip = 1
 launcher_item_app = /usr/share/applications/dualchat-telegram.desktop
 launcher_item_app = /usr/share/applications/whatsapp.desktop
 launcher_item_app = /usr/share/applications/discord.desktop
+launcher_item_app = /usr/share/applications/dualchat-browser.desktop
 
 #-------------------------------------
 # Clock

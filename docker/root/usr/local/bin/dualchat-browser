@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+
+limit=$(ulimit -n)
+if [ "$limit" = unlimited ] || [ "$limit" -gt 4096 ] 2>/dev/null; then
+    ulimit -S -n 4096 2>/dev/null || true
+fi
+
+export DISPLAY="${DISPLAY:-:1}"
+mkdir -p /config/chromium
+
+# 通用浏览器使用独立资料目录，保留地址栏，不影响聊天应用登录。
+exec chromium \
+    --no-sandbox \
+    --user-data-dir=/config/chromium \
+    --class=DualChatBrowser \
+    --password-store=basic \
+    --no-first-run \
+    --no-default-browser-check \
+    --new-window "$@"

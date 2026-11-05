@@ -1,7 +1,7 @@
 package: anpho.lzcapp.telegramv
-version: 1.4.0
+version: 1.5.0
 name: DualChat
-description: 在懒猫微服的同一个远程桌面中使用 Telegram、WhatsApp 和 Discord。
+description: 在懒猫微服的同一个远程桌面中使用 Telegram、WhatsApp、Discord 和 Chromium 浏览器。
 license: https://choosealicense.com/licenses/mit/
 homepage: https://github.com/wlabbyflower/DualChat
 author: anpho
