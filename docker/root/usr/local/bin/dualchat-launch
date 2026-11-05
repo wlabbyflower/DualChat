@@ -1,0 +1,111 @@
+#!/bin/sh
+# 统一启动入口：底部任务栏图标、桌面右键菜单、xterm 都调用这里。
+#
+# 相比直接在 .desktop 里写 /usr/local/bin/whatsapp，这里多做四件事：
+#   1) 先把文件句柄软上限压到 4096。微服的默认上限极高，子进程在关闭
+#      继承下来的句柄时可能长时间阻塞，表现为“点了没反应”。
+#   2) 用 setsid 脱离任务栏进程，并把标准输出/错误重定向到日志文件。
+#      子进程不再继承桌面会话的管道，避免写满管道后卡死。
+#   3) 启动后轮询窗口列表：如果窗口迟迟不出现但已经有一个旧窗口，
+#      就激活旧窗口，保证点击一定有可见反馈。
+#   4) 全过程写入 /config/dualchat/logs/launch.log，便于远程排查。
+
+set -u
+
+APP="${1:-}"
+
+LOG_DIR=/config/dualchat/logs
+mkdir -p "$LOG_DIR" 2>/dev/null || LOG_DIR=/tmp
+LAUNCH_LOG="$LOG_DIR/launch.log"
+
+log() {
+    printf '%s [%s] %s\n' "$(date '+%F %T')" "${APP:-?}" "$*" >>"$LAUNCH_LOG" 2>/dev/null
+}
+
+notify() {
+    command -v notify-send >/dev/null 2>&1 || return 0
+    notify-send -a DualChat -t 4000 'DualChat' "$1" >/dev/null 2>&1 || true
+}
+
+# 微服默认 nofile 上限是十亿级，逐项关闭句柄会拖死启动流程。
+limit=$(ulimit -n)
+if [ "$limit" = unlimited ] || [ "$limit" -gt 4096 ] 2>/dev/null; then
+    ulimit -S -n 4096 2>/dev/null || true
+fi
+
+export DISPLAY="${DISPLAY:-:1}"
+
+case "$APP" in
+    telegram)
+        TITLE='Telegram'
+        CMD=/usr/local/bin/dualchat-telegram
+        # Telegram 自己的窗口类，用于判断是否已经有窗口。
+        WCLASS=TelegramDesktop
+        ;;
+    whatsapp)
+        TITLE='WhatsApp'
+        CMD=/usr/local/bin/whatsapp
+        WCLASS=web.whatsapp.com.Chromium
+        ;;
+    discord)
+        TITLE='Discord'
+        CMD=/usr/local/bin/discord
+        WCLASS=discord.com__app.Chromium
+        ;;
+    *)
+        echo "usage: dualchat-launch telegram|whatsapp|discord" >&2
+        exit 2
+        ;;
+esac
+
+count_windows() {
+    wmctrl -lx 2>/dev/null | grep -c -F "$WCLASS" 2>/dev/null || true
+}
+
+if [ ! -x "$CMD" ]; then
+    log "启动器不存在：$CMD"
+    notify "$TITLE 启动失败：缺少 $CMD"
+    exit 1
+fi
+
+before=$(count_windows)
+log "启动 $TITLE（当前窗口数 ${before:-0}，nofile $(ulimit -n)）"
+
+# Telegram 是单实例程序，已经在跑时再启动也只会把旧窗口提到前面，
+# 这里直接激活，点击立刻有反应，不用干等。
+if [ "$APP" = telegram ] && [ "${before:-0}" -gt 0 ]; then
+    log "Telegram 已在运行，激活已有窗口"
+    wmctrl -x -a "$WCLASS" >/dev/null 2>&1 || wmctrl -a "$TITLE" >/dev/null 2>&1 || true
+    exit 0
+fi
+
+# setsid + 重定向：脱离任务栏进程组，输出落到日志，避免继承会话管道。
+setsid sh -c "cd \"\$HOME\" 2>/dev/null; exec \"\$0\"" "$CMD" \
+    >>"$LOG_DIR/$APP-output.log" 2>&1 &
+
+# 冷启动（尤其是 Chromium 首次创建配置目录）可能要十几秒，给个提示。
+if [ "${before:-0}" -eq 0 ]; then
+    notify "正在启动 $TITLE…"
+fi
+
+i=0
+while [ "$i" -lt 20 ]; do
+    sleep 1
+    i=$((i + 1))
+    now=$(count_windows)
+    if [ "${now:-0}" -gt "${before:-0}" ]; then
+        log "$TITLE 窗口已出现（${now}），耗时 ${i}s"
+        exit 0
+    fi
+done
+
+# 超时：已经有窗口就把它提到前面，没有就明确报错。
+if [ "${before:-0}" -gt 0 ]; then
+    log "20 秒内未出现新窗口，激活已有 $TITLE 窗口"
+    wmctrl -x -a "$WCLASS" >/dev/null 2>&1 || wmctrl -a "$TITLE" >/dev/null 2>&1 || true
+    exit 0
+fi
+
+log "20 秒内未出现 $TITLE 窗口，详见 $LOG_DIR/$APP-output.log"
+notify "$TITLE 启动超时，日志在「文稿 / telegram / dualchat / logs」"
+exit 1

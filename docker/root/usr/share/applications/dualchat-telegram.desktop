@@ -1,7 +1,9 @@
 [Desktop Entry]
 Type=Application
 Name=Telegram
-Exec=/opt/Telegram/Telegram
+Comment=Telegram Desktop
+Exec=/usr/local/bin/dualchat-launch telegram
 Icon=/usr/share/icons/dualchat/telegram.svg
 Terminal=false
 Categories=Network;InstantMessaging;
+StartupNotify=false

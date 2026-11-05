@@ -1,45 +1,114 @@
-# 固定底部任务栏：启动器、窗口切换、时钟。
-panel_items = LTC
+#-------------------------------------
+# DualChat 底部任务栏（tint2 17）
+#-------------------------------------
+# Backgrounds：第一段就是 id 1，依次类推。
+#-------------------------------------
+# Background 1: 面板底色
+rounded = 4
+border_width = 0
+border_sides = TBLR
+background_color = #202630 100
+border_color = #202630 100
+
+# Background 2: 固定图标（悬停/按下）
+rounded = 4
+border_width = 0
+border_sides = TBLR
+background_color = #2b333f 100
+border_color = #2b333f 100
+background_color_hover = #42536b 100
+background_color_pressed = #55688a 100
+
+# Background 3: 普通任务按钮
+rounded = 4
+border_width = 1
+border_sides = TBLR
+background_color = #2b333f 100
+border_color = #3a4657 100
+background_color_hover = #37404e 100
+border_color_hover = #4c5a6e 100
+
+# Background 4: 当前任务按钮
+rounded = 4
+border_width = 1
+border_sides = TBLR
+background_color = #42536b 100
+border_color = #6d84a3 100
+background_color_hover = #4f6280 100
+border_color_hover = #8ba4c6 100
+
+#-------------------------------------
+# Panel
+#-------------------------------------
 panel_monitor = primary
-panel_position = bottom center horizontal
+panel_items = LTC
 panel_size = 100% 48
 panel_margin = 0 0
 panel_padding = 8 4 8
-panel_layer = top
+panel_background_id = 1
+# 保持 0：tint2 17 里 dock 模式下窗口位置会跑到左上角（实测），
+# 这里继续交给 Openbox 托管，位置由 panel_position 决定。
 panel_dock = 0
+panel_position = bottom center horizontal
+panel_layer = top
+panel_shrink = 0
 strut_policy = follow_size
 autohide = 0
-rounded = 0
-border_width = 0
-background_color = #202630 100
-panel_background_id = 1
-rounded = 4
-border_width = 0
-background_color = #42536b 100
-launcher_padding = 8 0 12
-launcher_background_id = 2
-launcher_tooltip = 1
-launcher_icon_size = 32
-launcher_icon_asb = 100 0 0
-launcher_item_app = /usr/share/applications/dualchat-telegram.desktop
-launcher_item_app = /usr/share/applications/whatsapp.desktop
-launcher_item_app = /usr/share/applications/discord.desktop
+mouse_effects = 1
+mouse_hover_icon_asb = 100 0 10
+mouse_pressed_icon_asb = 100 0 0
+
+#-------------------------------------
+# Taskbar
+#-------------------------------------
 taskbar_mode = single_desktop
-taskbar_padding = 4 0 4
 taskbar_hide_if_empty = 0
+taskbar_padding = 4 0 4
+taskbar_background_id = 0
+taskbar_active_background_id = 0
+taskbar_name = 0
+taskbar_distribute_size = 1
+taskbar_sort_order = none
+task_align = left
+
+#-------------------------------------
+# Task buttons
+#-------------------------------------
 task_text = 1
 task_icon = 1
 task_centered = 0
 task_maximum_size = 240 40
 task_padding = 8 4 8
+task_tooltip = 1
 task_font = Sans 11
 task_font_color = #dddddd 100
 task_active_font_color = #ffffff 100
-task_active_background_id = 2
+task_background_id = 3
+task_active_background_id = 4
+task_iconified_background_id = 3
 mouse_left = toggle_iconify
 mouse_middle = none
 mouse_right = none
+
+#-------------------------------------
+# Launchers：左侧三个固定入口
+#-------------------------------------
+launcher_padding = 8 0 12
+launcher_background_id = 2
+launcher_icon_background_id = 0
+launcher_icon_size = 32
+launcher_icon_asb = 100 0 0
+launcher_icon_theme_override = 0
+launcher_tooltip = 1
+launcher_item_app = /usr/share/applications/dualchat-telegram.desktop
+launcher_item_app = /usr/share/applications/whatsapp.desktop
+launcher_item_app = /usr/share/applications/discord.desktop
+
+#-------------------------------------
+# Clock
+#-------------------------------------
 time1_format = %H:%M
 time1_font = Sans 11
 clock_font_color = #ffffff 100
 clock_padding = 10 0
+clock_background_id = 0

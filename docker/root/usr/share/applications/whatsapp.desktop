@@ -2,7 +2,8 @@
 Type=Application
 Name=WhatsApp
 Comment=WhatsApp Web
-Exec=/usr/local/bin/whatsapp
+Exec=/usr/local/bin/dualchat-launch whatsapp
 Icon=/usr/share/icons/dualchat/whatsapp.svg
 Terminal=false
 Categories=Network;InstantMessaging;
+StartupNotify=false

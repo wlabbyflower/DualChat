@@ -1,0 +1,126 @@
+#!/bin/sh
+# Telegram 桌面版自动更新：容器启动时在后台跑一次，
+# 从 telegram.org 官方地址取最新的 Linux x64 包，解到 /config 下持久保存，
+# 由 dualchat-telegram 在下次启动时优先使用。
+#
+# 这样做的好处：
+#   - 不用等镜像重新构建就能拿到新版本；
+#   - Telegram 自带的更新检查已被关闭（见 dualchat-telegram），
+#     不会再反复弹“发现新版本”；
+#   - 下载失败 / 解包失败一律静默保留旧版本，不影响使用。
+#
+# 注意：官方 Linux 包没有对外提供的校验和，只有 HTTPS 传输保护，
+# 下载包体积和可执行权限做了基本校验。
+
+set -u
+
+STATE=/config/.dualchat/tdesktop
+LOG_DIR=/config/dualchat/logs
+LOG="$LOG_DIR/telegram-update.log"
+REDIRECT_URL=https://telegram.org/dl/desktop/linux
+CHECK_INTERVAL=21600   # 6 小时检查一次，避免每次重开都下载
+MIN_PACKAGE_SIZE=50000000
+
+mkdir -p "$STATE" "$LOG_DIR" 2>/dev/null || exit 0
+
+log() {
+    printf '%s %s\n' "$(date '+%F %T')" "$*" >>"$LOG" 2>/dev/null
+}
+
+# 同一时间只允许一个更新进程。
+exec 9>"$STATE/.update.lock" 2>/dev/null || exit 0
+flock -n 9 || exit 0
+
+stamp="$STATE/.last-check"
+now=$(date +%s)
+if [ -f "$stamp" ]; then
+    last=$(date -r "$stamp" +%s 2>/dev/null || echo 0)
+    if [ "$((now - last))" -lt "$CHECK_INTERVAL" ]; then
+        log "跳过：$(( (now - last) / 60 )) 分钟前刚检查过"
+        exit 0
+    fi
+fi
+touch "$stamp" 2>/dev/null || true
+
+url=$(curl -fsSL -I -o /dev/null -w '%{url_effective}' --max-time 60 "$REDIRECT_URL" 2>/dev/null) || {
+    log "取版本信息失败（网络不可用？）"
+    exit 0
+}
+# 兼容两种官方文件名：td-setup-linux-x64-7.3.5.tar.xz、tsetup.5.15.4.tar.xz
+base=${url##*/}
+stem=${base%.tar.xz}
+ver=$(printf '%s' "$stem" | sed 's/[^0-9.]/ /g' | awk '{print $NF}' | sed 's/^\.*//; s/\.*$//')
+if ! printf '%s' "$ver" | grep -qE '^[0-9]+(\.[0-9]+)+$'; then
+    log "无法从地址解析版本：$url"
+    exit 0
+fi
+
+current=$(cat "$STATE/current" 2>/dev/null || true)
+if [ "$ver" = "$current" ]; then
+    log "已是最新版本 $ver"
+    exit 0
+fi
+newest=$(printf '%s\n%s\n' "$current" "$ver" | sed '/^$/d' | sort -V | tail -1)
+if [ "$newest" != "$ver" ]; then
+    log "远端版本 $ver 不高于本地 $current，跳过"
+    exit 0
+fi
+
+log "发现新版本 $ver（本地 ${current:-内置}），开始下载：$url"
+tmp="$STATE/.download.$$"
+if ! curl -fsSL --max-time 1800 -o "$tmp" "$url"; then
+    log "下载失败：$url"
+    rm -f "$tmp" 2>/dev/null || true
+    exit 0
+fi
+
+size=$(wc -c <"$tmp" 2>/dev/null || echo 0)
+if [ "$size" -lt "$MIN_PACKAGE_SIZE" ]; then
+    log "下载内容异常（$size 字节），放弃"
+    rm -f "$tmp" 2>/dev/null || true
+    exit 0
+fi
+
+unpack="$STATE/.unpack.$$"
+rm -rf "$unpack" 2>/dev/null || true
+mkdir -p "$unpack" 2>/dev/null || exit 0
+if ! tar -xJf "$tmp" -C "$unpack" --strip-components=1 2>>"$LOG"; then
+    log "解包失败：$url"
+    rm -rf "$unpack" "$tmp" 2>/dev/null || true
+    exit 0
+fi
+rm -f "$tmp" 2>/dev/null || true
+
+if [ ! -x "$unpack/Telegram" ]; then
+    log "解包结果里没有可执行的 Telegram"
+    rm -rf "$unpack" 2>/dev/null || true
+    exit 0
+fi
+chmod 755 "$unpack/Telegram" 2>/dev/null || true
+[ -f "$unpack/Updater" ] && chmod 755 "$unpack/Updater" 2>/dev/null
+
+dest="$STATE/tdesktop-$ver"
+rm -rf "$dest" 2>/dev/null || true
+if ! mv "$unpack" "$dest" 2>/dev/null; then
+    log "无法安装到 $dest"
+    rm -rf "$unpack" 2>/dev/null || true
+    exit 0
+fi
+printf '%s\n' "$ver" >"$STATE/current"
+rm -f "$STATE/broken" 2>/dev/null || true
+log "已安装 $ver 到 $dest"
+
+# 只保留当前版本，旧版本占 250MB 以上，没必要留着。
+for dir in "$STATE"/tdesktop-*; do
+    [ -d "$dir" ] || continue
+    [ "$dir" = "$dest" ] && continue
+    rm -rf "$dir" 2>/dev/null || true
+done
+
+if command -v notify-send >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
+    notify-send -a DualChat -t 6000 'DualChat' \
+        "Telegram 已更新到 $ver，重新打开 Telegram 后生效" >/dev/null 2>&1 || true
+fi
+
+log "更新完成：$ver"
+exit 0

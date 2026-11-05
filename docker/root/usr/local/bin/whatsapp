@@ -1,5 +1,21 @@
 #!/bin/sh
 set -eu
+
+# 微服默认句柄上限极高，先把软上限压到 4096，避免子进程启动时解析句柄表过久。
+limit=$(ulimit -n)
+if [ "$limit" = unlimited ] || [ "$limit" -gt 4096 ] 2>/dev/null; then
+    ulimit -S -n 4096 2>/dev/null || true
+fi
+
+export DISPLAY="${DISPLAY:-:1}"
 mkdir -p /config/whatsapp
+
 # 受容器命名空间限制，Chromium 的内置沙箱不可用。
-exec chromium --no-sandbox --user-data-dir=/config/whatsapp --app=https://web.whatsapp.com/ "$@"
+# --password-store=basic 避免容器里没有密钥环时弹“解锁钥匙串”。
+exec chromium \
+    --no-sandbox \
+    --user-data-dir=/config/whatsapp \
+    --password-store=basic \
+    --no-first-run \
+    --no-default-browser-check \
+    --app=https://web.whatsapp.com/ "$@"

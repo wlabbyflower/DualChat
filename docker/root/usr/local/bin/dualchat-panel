@@ -1,13 +1,41 @@
 #!/bin/sh
-# tint2 的启动子进程逐个关闭文件描述符。微服的十亿级默认上限会让
-# 点击启动卡在清理循环中；只限制任务栏及其启动的子进程，不影响桌面服务。
+# 底部任务栏（tint2）启动器。由 /defaults/startwm.sh 在桌面会话里拉起。
+#
+# 微服的默认 nofile 上限是十亿级，tint2 启动子进程时逐项关闭句柄会卡很久，
+# 表现为点击固定图标后长时间没有反应。这里只限制任务栏及其子进程的软上限，
+# 不影响桌面服务和登录资料。
+
+LOG_DIR=/config/dualchat/logs
+mkdir -p "$LOG_DIR" 2>/dev/null || LOG_DIR=/tmp
+LOG="$LOG_DIR/panel.log"
+
 limit=$(ulimit -n)
-if [ "$limit" = unlimited ] || [ "$limit" -gt 4096 ]; then
-    ulimit -S -n 4096
+if [ "$limit" = unlimited ] || [ "$limit" -gt 4096 ] 2>/dev/null; then
+    ulimit -S -n 4096 2>/dev/null || true
 fi
-# 在桌面会话中启动，独立于旧版可能阻塞的 Openbox autostart。
-# tint2 自身等待窗口管理器就绪，退出后重启以恢复任务栏。
-while :; do
-    tint2 -c /etc/dualchat/tint2rc
-    sleep 2
-done
+
+export DISPLAY="${DISPLAY:-:1}"
+
+run_panel() {
+    # 独立于旧版可能阻塞的 Openbox autostart；tint2 退出后重启以恢复任务栏。
+    while :; do
+        printf '%s tint2 start (nofile %s)\n' "$(date '+%F %T')" "$(ulimit -n)" >>"$LOG" 2>&1
+        tint2 -c /etc/dualchat/tint2rc >>"$LOG" 2>&1
+        printf '%s tint2 exited (%s)，2 秒后重启\n' "$(date '+%F %T')" "$?" >>"$LOG" 2>&1
+        sleep 2
+    done
+}
+
+# 桌面会话重启时 startwm 会再拉一次本脚本。用 flock 保证只有一个任务栏，
+# 否则会出现两层图标重叠。锁文件放在 /config 下（与运行用户一致），
+# 拿不到锁就直接退出；锁文件建不出来也不影响任务栏启动。
+LOCK_FILE="${HOME:-/config}/dualchat/panel.lock"
+mkdir -p "${LOCK_FILE%/*}" 2>/dev/null || true
+if ( : >"$LOCK_FILE" ) 2>/dev/null; then
+    (
+        flock -n 9 2>/dev/null || exit 0
+        run_panel
+    ) 9>"$LOCK_FILE"
+else
+    run_panel
+fi

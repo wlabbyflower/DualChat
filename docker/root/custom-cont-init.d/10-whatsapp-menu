@@ -1,12 +1,35 @@
 #!/bin/sh
 set -eu
-# 新安装修改默认菜单；升级时保留用户已有菜单，只补上入口。
+# 容器初始化：把菜单和 Openbox 自启动都指向 DualChat 的入口脚本。
+# 旧版装过的用户已有 /config 下的菜单与 autostart，升级时这里就地改写，
+# 不会删除用户自己的其他条目。
+
+# 日志目录：任务栏、启动器、Telegram 更新都会往这里写。
+mkdir -p /config/dualchat/logs
+chown -R abc:abc /config/dualchat 2>/dev/null || true
+
 for menu in /defaults/menu.xml /config/.config/openbox/menu.xml; do
     [ -f "$menu" ] || continue
-    if ! grep -q '/usr/local/bin/whatsapp' "$menu"; then
-        sed -i '\|</menu>|i\<item label="WhatsApp"><action name="Execute"><command>/usr/local/bin/whatsapp</command></action></item>' "$menu"
+    # 旧版直接指向 /usr/local/bin/whatsapp 的条目换成统一启动器。
+    sed -i 's|>/usr/local/bin/whatsapp<|>/usr/local/bin/dualchat-launch whatsapp<|g' "$menu"
+    sed -i 's|>/usr/local/bin/discord<|>/usr/local/bin/dualchat-launch discord<|g' "$menu"
+    sed -i 's|>/opt/Telegram/Telegram<|>/usr/local/bin/dualchat-launch telegram<|g' "$menu"
+    sed -i 's|>/usr/bin/wrapped-telegram<|>/usr/local/bin/dualchat-launch telegram<|g' "$menu"
+
+    if ! grep -q '/usr/local/bin/whatsapp\|dualchat-launch whatsapp' "$menu"; then
+        sed -i '\|</menu>|i\<item label="WhatsApp"><action name="Execute"><command>/usr/local/bin/dualchat-launch whatsapp</command></action></item>' "$menu"
     fi
-    if ! grep -q '/usr/local/bin/discord' "$menu"; then
-        sed -i '\|</menu>|i\<item label="Discord"><action name="Execute"><command>/usr/local/bin/discord</command></action></item>' "$menu"
+    if ! grep -q '/usr/local/bin/discord\|dualchat-launch discord' "$menu"; then
+        sed -i '\|</menu>|i\<item label="Discord"><action name="Execute"><command>/usr/local/bin/dualchat-launch discord</command></action></item>' "$menu"
     fi
 done
+
+# 自启动：旧版写的是 wrapped-telegram（只有镜像内置二进制、不写更新标记），
+# 换成 dualchat-telegram 才会使用自动更新下来的新版本并关闭自带更新提示。
+for autostart in /defaults/autostart /config/.config/openbox/autostart; do
+    [ -f "$autostart" ] || continue
+    sed -i 's|^[[:space:]]*wrapped-telegram[[:space:]]*$|/usr/local/bin/dualchat-telegram|' "$autostart"
+    sed -i 's|^[[:space:]]*/opt/Telegram/Telegram[[:space:]]*$|/usr/local/bin/dualchat-telegram|' "$autostart"
+done
+
+echo "[dualchat] 菜单与自启动已指向 dualchat-launch / dualchat-telegram"

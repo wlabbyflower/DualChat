@@ -1,5 +1,19 @@
 #!/bin/sh
 set -eu
+
+limit=$(ulimit -n)
+if [ "$limit" = unlimited ] || [ "$limit" -gt 4096 ] 2>/dev/null; then
+    ulimit -S -n 4096 2>/dev/null || true
+fi
+
+export DISPLAY="${DISPLAY:-:1}"
 mkdir -p /config/discord
+
 # 与 WhatsApp 隔离浏览器资料，保持各自的登录状态。
-exec chromium --no-sandbox --user-data-dir=/config/discord --app=https://discord.com/app "$@"
+exec chromium \
+    --no-sandbox \
+    --user-data-dir=/config/discord \
+    --password-store=basic \
+    --no-first-run \
+    --no-default-browser-check \
+    --app=https://discord.com/app "$@"

@@ -1,0 +1,81 @@
+#!/bin/sh
+# Telegram 桌面版入口：优先使用自动更新下载到 /config 的新版本，
+# 并关闭 Telegram 自带的更新检查（官方 externalupdater.d 机制）。
+#
+# 为什么要关掉自带更新：
+#   镜像里的 Telegram 是固定版本，官方更新器会一直提示“有新版本”，
+#   点更新又会因为 /opt 只读 / 需要重启而失败，所以只会反复弹窗。
+#   tdesktop 在启动时会检查 <工作目录>/externalupdater.d/ 与 <可执行目录>/externalupdater.d/，
+#   如果里面某个文件有一行内容等于「当前可执行文件的绝对路径」，
+#   就调用 SetUpdaterDisabledAtStartup() 彻底不创建 UpdateChecker：
+#   既不联网查询版本，也不会显示更新横幅。
+#   版本由 dualchat-telegram-update 在容器启动时负责。
+
+set -u
+
+STATE=/config/.dualchat/tdesktop
+LOG_DIR=/config/dualchat/logs
+LOG="$LOG_DIR/telegram.log"
+FALLBACK=/opt/Telegram/Telegram
+
+mkdir -p "$STATE" "$LOG_DIR" 2>/dev/null || true
+
+log() {
+    printf '%s %s\n' "$(date '+%F %T')" "$*" >>"$LOG" 2>/dev/null
+}
+
+notify() {
+    command -v notify-send >/dev/null 2>&1 || return 0
+    notify-send -a DualChat -t 6000 'DualChat' "$1" >/dev/null 2>&1 || true
+}
+
+limit=$(ulimit -n)
+if [ "$limit" = unlimited ] || [ "$limit" -gt 4096 ] 2>/dev/null; then
+    ulimit -S -n 4096 2>/dev/null || true
+fi
+
+export DISPLAY="${DISPLAY:-:1}"
+
+ver=$(cat "$STATE/current" 2>/dev/null || true)
+broken=$(cat "$STATE/broken" 2>/dev/null || true)
+
+BIN="$FALLBACK"
+if [ -n "$ver" ] && [ "$ver" != "$broken" ] && [ -x "$STATE/tdesktop-$ver/Telegram" ]; then
+    BIN="$STATE/tdesktop-$ver/Telegram"
+fi
+
+# 关闭自带更新检查：写入官方识别的 externalupdater.d 标记。
+write_updater_marker() {
+    target=$1
+    [ -n "$target" ] || return 0
+    for dir in \
+        "$HOME/.local/share/TelegramDesktop" \
+        "$HOME/TelegramDesktop" \
+        "$(dirname "$target")"
+    do
+        mkdir -p "$dir/externalupdater.d" 2>/dev/null || continue
+        printf '%s\n' "$target" >"$dir/externalupdater.d/dualchat" 2>/dev/null || true
+    done
+}
+
+write_updater_marker "$BIN"
+label="$ver"
+[ "$BIN" = "$FALLBACK" ] && label='内置'
+log "启动 $BIN（版本 ${label:-内置}）"
+
+start=$(date +%s)
+"$BIN" "$@"
+status=$?
+elapsed=$(( $(date +%s) - start ))
+
+# 新版本要是在 20 秒内直接退出，就回退到镜像内置版本，避免用户无从下手。
+if [ "$status" -ne 0 ] && [ "$elapsed" -lt 20 ] && [ "$BIN" != "$FALLBACK" ] && [ -x "$FALLBACK" ]; then
+    log "新版本启动失败（status=$status，${elapsed}s），回退到内置版本"
+    printf '%s\n' "$ver" >"$STATE/broken" 2>/dev/null || true
+    write_updater_marker "$FALLBACK"
+    notify "Telegram ${ver} 启动失败，已回退到内置版本"
+    exec "$FALLBACK" "$@"
+fi
+
+log "退出（status=$status，运行 ${elapsed}s）"
+exit "$status"
